@@ -1,93 +1,76 @@
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
+const selectors = {
+  input: document.querySelector("#datetime-picker"),
+  buttonStart: document.querySelector("[data-start]"),
+  tableDays: document.querySelector("[data-days]"),
+  tableHours: document.querySelector("[data-hours]"),
+  tableMinutes: document.querySelector("[data-minutes]"),
+  tableSeconds: document.querySelector("[data-seconds]"),
+};
 
-const refs = {
-  inputDate: document.querySelector('#datetime-picker'),
-  btnStart: document.querySelector('[data-start]'),
-  tableDay: document.querySelector('[data-days]'),
-  tableHours: document.querySelector('[data-hours]'),
-  tableMinutes: document.querySelector('[data-minutes]'),
-  tableSeconds: document.querySelector('[data-seconds]'),
-}
-
-let choseDate = null;
+let selectedDate = null;
 let timerId = null;
 
-switchBtn(false);
+toggleButton(false);
 
-const options = {
-    enableTime: true,
-    time_24hr: true,
-    defaultDate: new Date(),
-    minuteIncrement: 1,
-    onClose(selectedDates) {
-        choseDate = selectedDates[0]
-        checkDate();
-    },
-  };
+flatpickr(selectors.input, {
+  enableTime: true,
+  time_24hr: true,
+  defaultDate: new Date(),
+  minuteIncrement: 1,
+  onClose: ([date]) => {
+    selectedDate = date;
+    validateSelectedDate();
+  },
+});
 
-flatpickr(refs.inputDate, options);
+selectors.buttonStart.addEventListener("click", startTimer);
 
-refs.btnStart.addEventListener('click', startTimer);
-
-
-function switchBtn(boolean) {
-  refs.btnStart.disabled = !boolean;
+function toggleButton(disabled) {
+  selectors.buttonStart.disabled = !disabled;
 }
 
-function checkDate() {
-  if(choseDate > new Date) {
-    switchBtn(true);
-  } else {
-    alert("Please choose a date in the future")
-  }
+function validateSelectedDate() {
+  toggleButton(selectedDate > new Date());
+  if (!selectors.buttonStart.disabled) alert("Please choose a date in the future");
 }
 
 function startTimer() {
-  
-  switchBtn(false);
-  refs.inputDate.disabled = true;
-
+  toggleButton(false);
+  selectors.input.disabled = true;
   timerId = setInterval(() => {
-    let timeDiff = choseDate - new Date;
-    if(timeDiff <= 0) {
+    const timeDiff = selectedDate - new Date();
+    if (timeDiff <= 0) {
       clearInterval(timerId);
-      refs.inputDate.disabled = false;
-      return
+      selectors.input.disabled = false;
+      return;
     }
-    const convertMsDate = convertMs(timeDiff);
-    showTime(convertMsDate);
-
+    const { days, hours, minutes, seconds } = convertMilliseconds(timeDiff);
+    displayTime(days, hours, minutes, seconds);
   }, 1000);
 }
 
-function addLeadingZero(value) {
-  return value.toString().padStart(2, '0');
-}
+const convertMilliseconds = (ms) => {
+  const second = 1000;
+  const minute = second * 60;
+  const hour = minute * 60;
+  const day = hour * 24;
 
-function convertMs(ms) {
-    // Number of milliseconds per unit of time
-    const second = 1000;
-    const minute = second * 60;
-    const hour = minute * 60;
-    const day = hour * 24;
-  
-    // Remaining days
-    const days = Math.floor(ms / day);
-    // Remaining hours
-    const hours = Math.floor((ms % day) / hour);
-    // Remaining minutes
-    const minutes = Math.floor(((ms % day) % hour) / minute);
-    // Remaining seconds
-    const seconds = Math.floor((((ms % day) % hour) % minute) / second);
-  
-    return { days, hours, minutes, seconds };
-} 
- 
-function showTime({days, hours, minutes, seconds}) {
-    refs.tableDay.textContent = addLeadingZero(days);
-    refs.tableHours.textContent = addLeadingZero(hours);
-    refs.tableMinutes.textContent = addLeadingZero(minutes);
-    refs.tableSeconds.textContent = addLeadingZero(seconds);
-}
+  const days = Math.floor(ms / day);
+  const hours = Math.floor((ms % day) / hour);
+  const minutes = Math.floor(((ms % day) % hour) / minute);
+  const seconds = Math.floor((((ms % day) % hour) % minute) / second);
+
+  return { days, hours, minutes, seconds };
+};
+
+const addLeadingZero = (value) => value.toString().padStart(2, "0");
+
+const displayTime = (days, hours, minutes, seconds) => {
+  selectors.tableDays.textContent = addLeadingZero(days);
+  selectors.tableHours.textContent = addLeadingZero(hours);
+  selectors.tableMinutes.textContent = addLeadingZero(minutes);
+  selectors.tableSeconds.textContent = addLeadingZero(seconds);
+};
